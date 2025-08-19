@@ -1,0 +1,39 @@
+/* static/css/style.css */
+
+/* Change background color */
+body {
+  background-color: #f9fafb; /* light gray */
+}
+
+/* Custom button style */
+.btn-custom {
+  background: linear-gradient(to right, #4f46e5, #3b82f6);
+  color: white;
+  padding: 10px 20px;
+  border-radius: 12px;
+  font-weight: bold;
+  transition: 0.3s;
+}
+
+.btn-custom:hover {
+  background: linear-gradient(to right, #3b82f6, #2563eb);
+  transform: scale(1.05);
+}
+
+/* Desktop icons styling */
+.icon-card {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  border-radius: 16px;
+  background: white;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+  transition: transform 0.2s;
+}
+
+.icon-card:hover {
+  transform: translateY(-5px);
+}
