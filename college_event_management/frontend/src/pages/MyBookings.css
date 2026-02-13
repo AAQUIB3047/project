@@ -50,19 +50,49 @@
 }
 
 .booking-header h3 {
-  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 600;
   color: var(--text-primary);
+  margin: 0;
   flex: 1;
 }
 
 .booking-status {
-  background: rgba(34, 197, 94, 0.2);
-  color: var(--primary-green);
-  padding: 4px 12px;
-  border-radius: 6px;
-  font-size: 0.85rem;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
   font-weight: 600;
   white-space: nowrap;
+}
+
+.booking-status.confirmed {
+  background: rgba(34, 197, 94, 0.1);
+  color: #86efac;
+  border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.booking-status.pending {
+  background: rgba(251, 191, 36, 0.1);
+  color: #fde047;
+  border: 1px solid rgba(251, 191, 36, 0.3);
+}
+
+.booking-status.cancelled {
+  background: rgba(239, 68, 68, 0.1);
+  color: #fca5a5;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}
+
+.booking-status.no-show {
+  background: rgba(107, 114, 128, 0.1);
+  color: #d1d5db;
+  border: 1px solid rgba(107, 114, 128, 0.3);
+}
+
+.booking-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 16px;
 }
 
 .booking-details {
@@ -121,7 +151,12 @@
 
 .booking-card.skeleton {
   height: 250px;
-  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(34, 197, 94, 0.1) 50%, var(--card-bg) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    rgba(34, 197, 94, 0.1) 50%,
+    var(--card-bg) 75%
+  );
   background-size: 200% 100%;
   animation: loading 2s infinite;
 }

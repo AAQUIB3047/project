@@ -19,8 +19,7 @@ const Events = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        // Replace with actual API call
-        const response = await fetch('http://localhost:8000/api/events/', {
+        const response = await fetch('http://localhost:8001/api/events/events/', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },
@@ -28,9 +27,24 @@ const Events = () => {
 
         if (response.ok) {
           const data = await response.json();
-          setEvents(data);
+          // Handle both array and paginated responses
+          const events = Array.isArray(data) ? data : data.results || [];
+
+          // Transform event data to match expected format
+          const transformedEvents = events.map((event) => ({
+            ...event,
+            date: event.event_date,
+            location: event.venue_details?.location || event.venue || 'TBD',
+            capacity: event.max_capacity,
+            registered: event.registration_count || 0,
+            image: event.poster_image_url || event.image || null,
+            status: event.status || 'upcoming',
+          }));
+
+          setEvents(transformedEvents);
         }
-      } catch {
+      } catch (error) {
+        console.error('Failed to fetch events:', error);
         // Failed to fetch events, use sample data
         setEvents(SAMPLE_EVENTS);
       } finally {

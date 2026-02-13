@@ -21,14 +21,15 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def register(self, request):
         """
-        Register a new student user.
+        Register a new user with role selection.
         
         Expected payload:
         {
-            "email": "student@example.com",
+            "email": "user@example.com",
             "password": "securepassword123",
             "first_name": "John",
-            "last_name": "Doe"
+            "last_name": "Doe",
+            "role": "participant"  # optional, defaults to 'participant', can be 'participant', 'organizer'
         }
         """
         try:
@@ -36,11 +37,20 @@ class UserViewSet(viewsets.ModelViewSet):
             password = request.data.get('password')
             first_name = request.data.get('first_name', '')
             last_name = request.data.get('last_name', '')
+            role = request.data.get('role', 'participant')
 
             # Validation
             if not email or not password:
                 return Response(
                     {"error": "Email and password are required"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+            # Validate role
+            valid_roles = ['participant', 'organizer']
+            if role not in valid_roles:
+                return Response(
+                    {"error": f"Invalid role. Must be one of: {', '.join(valid_roles)}"},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
@@ -57,13 +67,14 @@ class UserViewSet(viewsets.ModelViewSet):
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
-            # Create new user
+            # Create new user with selected role
             user = User.objects.create_user(
+                username=email,  # Use email as username
                 email=email,
                 password=password,
                 first_name=first_name,
                 last_name=last_name,
-                role='student'
+                role=role
             )
 
             # Generate JWT tokens
@@ -87,17 +98,19 @@ class UserViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=['post'], permission_classes=[AllowAny])
     def login(self, request):
         """
-        Login with email and password.
+        Login with email, password, and role.
         
         Expected payload:
         {
-            "email": "student@example.com",
-            "password": "securepassword123"
+            "email": "participant@example.com",
+            "password": "securepassword123",
+            "role": "participant"  # optional, defaults to 'participant'
         }
         """
         try:
             email = request.data.get('email')
             password = request.data.get('password')
+            role = request.data.get('role', 'participant')
 
             if not email or not password:
                 return Response(
@@ -118,6 +131,13 @@ class UserViewSet(viewsets.ModelViewSet):
             if not user.check_password(password):
                 return Response(
                     {"error": "Invalid email or password"},
+                    status=status.HTTP_401_UNAUTHORIZED
+                )
+
+            # Verify role matches (for non-organizer users)
+            if user.role != 'organizer' and user.role != role:
+                return Response(
+                    {"error": f"This account is not registered as a {role}. Please select the correct user type."},
                     status=status.HTTP_401_UNAUTHORIZED
                 )
 
@@ -202,18 +222,18 @@ class UserViewSet(viewsets.ModelViewSet):
 
     @action(detail=False, methods=['get'], permission_classes=[IsAuthenticated])
     def enrollments(self, request):
-        """Get all student enrollments (for admin)"""
-        if request.user.role != 'admin':
+        """Get all participant enrollments (for organizer)"""
+        if request.user.role != 'organizer':
             return Response(
-                {"error": "Only admins can access this endpoint"},
+                {"error": "Only organizers can access this endpoint"},
                 status=status.HTTP_403_FORBIDDEN
             )
         
-        # Get student information from Student model
-        students = User.objects.filter(role='student').values(
+        # Get participant information 
+        participants = User.objects.filter(role='participant').values(
             'id', 'email', 'first_name', 'last_name', 'branch', 'created_at'
         )
         return Response({
-            'count': students.count(),
-            'students': list(students)
+            'count': participants.count(),
+            'participants': list(participants)
         })

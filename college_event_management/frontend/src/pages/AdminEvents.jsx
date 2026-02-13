@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import './AdminEvents.css';
 
+// FormData is a browser API, no import needed
+
 const AdminEvents = () => {
   const [events, setEvents] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -15,25 +17,78 @@ const AdminEvents = () => {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
-    date: '',
-    time: '',
-    location: '',
-    price: '',
-    category: 'concert',
-    available_seats: '',
-    image_url: '',
+    event_date: '',
+    start_time: '',
+    end_time: '',
+    venue: '',
+    category: '',
+    department: '',
+    max_capacity: '',
+    event_type: 'workshop',
+    registration_fee: '0.00',
+    registration_deadline: '',
+    poster_image: null,
   });
 
+  const [bulkUploadFile, setBulkUploadFile] = useState(null);
+  const [showBulkUpload, setShowBulkUpload] = useState(false);
+
+  const [venues, setVenues] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [departments, setDepartments] = useState([]);
   const token = localStorage.getItem('access_token');
 
   useEffect(() => {
     fetchEvents();
+    fetchVenues();
+    fetchCategories();
+    fetchDepartments();
   }, []);
+
+  const fetchVenues = async () => {
+    try {
+      const response = await axios.get('http://localhost:8001/api/events/venues/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setVenues(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      // Error fetching venues - set empty array to prevent map errors
+      console.error('Failed to fetch venues:', error);
+      setVenues([]);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const response = await axios.get('http://localhost:8001/api/events/categories/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Ensure we always set an array
+      setCategories(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      // Error fetching categories - set empty array to prevent map errors
+      console.error('Failed to fetch categories:', error);
+      setCategories([]);
+    }
+  };
+
+  const fetchDepartments = async () => {
+    try {
+      const response = await axios.get('http://localhost:8001/api/events/departments/', {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setDepartments(Array.isArray(response.data) ? response.data : []);
+    } catch (error) {
+      // Error fetching departments - set empty array to prevent map errors
+      console.error('Failed to fetch departments:', error);
+      setDepartments([]);
+    }
+  };
 
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/api/events/', {
+      const response = await axios.get('http://localhost:8001/api/events/events/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       // Handle both array and paginated responses
@@ -41,6 +96,7 @@ const AdminEvents = () => {
       setEvents(data);
     } catch (error) {
       setErrorMessage('Failed to fetch events');
+      // Error fetching events - will show error message and empty events list
       console.error(error);
       setEvents([]);
     } finally {
@@ -50,10 +106,52 @@ const AdminEvents = () => {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [name]: value,
     }));
+  };
+
+  const handleFileChange = (e) => {
+    const { name, files } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: files[0] || null,
+    }));
+  };
+
+  const handleBulkUpload = async () => {
+    if (!bulkUploadFile) {
+      setErrorMessage('Please select a file to upload');
+      return;
+    }
+
+    setErrorMessage('');
+    setSuccessMessage('');
+
+    try {
+      // FormData is a browser API used for file uploads
+      const formData = new FormData();
+      formData.append('file', bulkUploadFile);
+
+      const response = await axios.post(
+        'http://localhost:8001/api/events/events/bulk_upload/',
+        formData,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        }
+      );
+
+      setSuccessMessage(response.data.message);
+      setBulkUploadFile(null);
+      setShowBulkUpload(false);
+      fetchEvents();
+    } catch (error) {
+      setErrorMessage(error.response?.data?.error || 'Failed to upload events');
+    }
   };
 
   const handleSubmit = async (e) => {
@@ -62,27 +160,43 @@ const AdminEvents = () => {
     setSuccessMessage('');
 
     try {
-      const payload = {
-        ...formData,
-        price: parseFloat(formData.price) || 0,
-        available_seats: parseInt(formData.available_seats) || 0,
-      };
+      // FormData is a browser API used for form submissions with file uploads
+      const formDataToSend = new FormData();
+
+      // Add all form fields
+      Object.keys(formData).forEach((key) => {
+        if (key === 'poster_image' && formData[key]) {
+          formDataToSend.append('poster_image', formData[key]);
+        } else if (key !== 'poster_image') {
+          let value = formData[key];
+          if (key === 'venue' || key === 'category' || key === 'department') {
+            value = parseInt(value) || null;
+          } else if (key === 'max_capacity') {
+            value = parseInt(value) || 0;
+          } else if (key === 'registration_fee') {
+            value = parseFloat(value) || 0.0;
+          }
+          formDataToSend.append(key, value);
+        }
+      });
 
       if (editingId) {
         // Update event
-        await axios.put(
-          `http://localhost:8000/api/events/${editingId}/`,
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.put(`http://localhost:8001/api/events/events/${editingId}/`, formDataToSend, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         setSuccessMessage('Event updated successfully!');
       } else {
         // Create event
-        await axios.post(
-          'http://localhost:8000/api/events/',
-          payload,
-          { headers: { Authorization: `Bearer ${token}` } }
-        );
+        await axios.post('http://localhost:8001/api/events/events/', formDataToSend, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'multipart/form-data',
+          },
+        });
         setSuccessMessage('Event created successfully!');
       }
 
@@ -90,9 +204,7 @@ const AdminEvents = () => {
       fetchEvents();
     } catch (error) {
       setErrorMessage(
-        error.response?.data?.detail ||
-        error.response?.data?.title?.[0] ||
-        'Failed to save event'
+        error.response?.data?.detail || error.response?.data?.title?.[0] || 'Failed to save event'
       );
     }
   };
@@ -101,13 +213,17 @@ const AdminEvents = () => {
     setFormData({
       title: event.title,
       description: event.description,
-      date: event.date,
-      time: event.time || '',
-      location: event.location || '',
-      price: event.price || '',
-      category: event.category || 'concert',
-      available_seats: event.available_seats || '',
-      image_url: event.image_url || '',
+      event_date: event.event_date,
+      start_time: event.start_time || '',
+      end_time: event.end_time || '',
+      venue: event.venue || '',
+      category: event.category || '',
+      department: event.department || '',
+      max_capacity: event.max_capacity || '',
+      event_type: event.event_type || 'workshop',
+      registration_fee: event.registration_fee || '0.00',
+      registration_deadline: event.registration_deadline || '',
+      poster_image: null, // Reset to null for editing
     });
     setEditingId(event.id);
     setShowForm(true);
@@ -115,10 +231,9 @@ const AdminEvents = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(
-        `http://localhost:8000/api/events/${deleteConfirm}/`,
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
+      await axios.delete(`http://localhost:8001/api/events/events/${deleteConfirm}/`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       setSuccessMessage('Event deleted successfully!');
       setDeleteConfirm(null);
       fetchEvents();
@@ -127,26 +242,65 @@ const AdminEvents = () => {
     }
   };
 
+  const handlePublish = async (eventId) => {
+    try {
+      await axios.post(
+        `http://localhost:8001/api/events/events/${eventId}/publish/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setSuccessMessage('Event published successfully!');
+      fetchEvents();
+    } catch (error) {
+      setErrorMessage('Failed to publish event');
+    }
+  };
+
+  const handleCancel = async (eventId) => {
+    try {
+      await axios.post(
+        `http://localhost:8001/api/events/events/${eventId}/cancel/`,
+        {},
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setSuccessMessage('Event cancelled successfully!');
+      fetchEvents();
+    } catch (error) {
+      setErrorMessage('Failed to cancel event');
+    }
+  };
+
   const resetForm = () => {
     setFormData({
       title: '',
       description: '',
-      date: '',
-      time: '',
-      location: '',
-      price: '',
-      category: 'concert',
-      available_seats: '',
-      image_url: '',
+      event_date: '',
+      start_time: '',
+      end_time: '',
+      venue: '',
+      category: '',
+      department: '',
+      max_capacity: '',
+      event_type: 'workshop',
+      registration_fee: '0.00',
+      registration_deadline: '',
+      poster_image: null,
     });
     setEditingId(null);
     setShowForm(false);
   };
 
-  const filteredEvents = Array.isArray(events) ? events.filter(event =>
-    event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    event.description?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  const filteredEvents = Array.isArray(events)
+    ? events.filter(
+        (event) =>
+          event.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          event.description?.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : [];
 
   return (
     <div className="admin-events">
@@ -156,23 +310,79 @@ const AdminEvents = () => {
             <h1>📊 Event Management</h1>
             <p>Create, edit, and delete events</p>
           </div>
-          <button
-            className="btn btn-primary btn-lg"
-            onClick={() => !showForm ? setShowForm(true) : resetForm()}
-          >
-            {showForm ? '✕ Cancel' : '+ Create Event'}
-          </button>
+          <div className="header-actions">
+            <button
+              className="btn btn-secondary btn-lg"
+              onClick={() => setShowBulkUpload(!showBulkUpload)}
+            >
+              📁 Bulk Upload
+            </button>
+            <button
+              className="btn btn-primary btn-lg"
+              onClick={() => (!showForm ? setShowForm(true) : resetForm())}
+            >
+              {showForm ? '✕ Cancel' : '+ Create Event'}
+            </button>
+          </div>
         </div>
 
-        {successMessage && (
-          <div className="alert alert-success">
-            ✓ {successMessage}
-          </div>
-        )}
+        {successMessage && <div className="alert alert-success">✓ {successMessage}</div>}
 
-        {errorMessage && (
-          <div className="alert alert-error">
-            ✕ {errorMessage}
+        {errorMessage && <div className="alert alert-error">✕ {errorMessage}</div>}
+
+        {showBulkUpload && (
+          <div className="form-section card">
+            <h2>Bulk Upload Events</h2>
+            <div className="bulk-upload-form">
+              <div className="form-group">
+                <label htmlFor="bulk_file">Upload CSV or Excel File</label>
+                <input
+                  id="bulk_file"
+                  type="file"
+                  accept=".csv,.xlsx,.xls"
+                  onChange={(e) => setBulkUploadFile(e.target.files[0])}
+                />
+                {bulkUploadFile && (
+                  <div className="file-preview">Selected: {bulkUploadFile.name}</div>
+                )}
+              </div>
+              <div className="bulk-upload-info">
+                <h4>Required Columns:</h4>
+                <ul>
+                  <li>title - Event title</li>
+                  <li>description - Event description</li>
+                  <li>event_date - Date (YYYY-MM-DD)</li>
+                  <li>start_time - Start time (HH:MM)</li>
+                  <li>end_time - End time (HH:MM)</li>
+                  <li>venue - Venue ID</li>
+                  <li>department - Department ID</li>
+                  <li>max_capacity - Maximum capacity</li>
+                </ul>
+                <h4>Optional Columns:</h4>
+                <ul>
+                  <li>category - Category ID</li>
+                  <li>event_type - Event type (workshop, seminar, etc.)</li>
+                  <li>registration_fee - Registration fee</li>
+                  <li>registration_deadline - Registration deadline (YYYY-MM-DD)</li>
+                  <li>status - Event status (draft, published, etc.)</li>
+                </ul>
+              </div>
+              <div className="form-actions">
+                <button type="button" className="btn btn-primary btn-lg" onClick={handleBulkUpload}>
+                  📤 Upload Events
+                </button>
+                <button
+                  type="button"
+                  className="btn btn-secondary btn-lg"
+                  onClick={() => {
+                    setShowBulkUpload(false);
+                    setBulkUploadFile(null);
+                  }}
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         )}
 
@@ -203,12 +413,12 @@ const AdminEvents = () => {
                     onChange={handleInputChange}
                     required
                   >
-                    <option value="concert">Concert</option>
-                    <option value="conference">Conference</option>
-                    <option value="sports">Sports</option>
-                    <option value="workshop">Workshop</option>
-                    <option value="festival">Festival</option>
-                    <option value="other">Other</option>
+                    <option value="">Select a category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.category_name}
+                      </option>
+                    ))}
                   </select>
                 </div>
               </div>
@@ -228,66 +438,109 @@ const AdminEvents = () => {
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="date">Date *</label>
+                  <label htmlFor="event_date">Event Date *</label>
                   <input
-                    id="date"
+                    id="event_date"
                     type="date"
-                    name="date"
-                    value={formData.date}
+                    name="event_date"
+                    value={formData.event_date}
                     onChange={handleInputChange}
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="time">Time</label>
+                  <label htmlFor="start_time">Start Time *</label>
                   <input
-                    id="time"
+                    id="start_time"
                     type="time"
-                    name="time"
-                    value={formData.time}
+                    name="start_time"
+                    value={formData.start_time}
                     onChange={handleInputChange}
+                    required
                   />
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="location">Location *</label>
+                  <label htmlFor="end_time">End Time *</label>
                   <input
-                    id="location"
-                    type="text"
-                    name="location"
-                    value={formData.location}
+                    id="end_time"
+                    type="time"
+                    name="end_time"
+                    value={formData.end_time}
                     onChange={handleInputChange}
-                    placeholder="E.g., Main Auditorium"
                     required
                   />
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="price">Price (₹)</label>
-                  <input
-                    id="price"
-                    type="number"
-                    name="price"
-                    value={formData.price}
+                  <label htmlFor="venue">Venue *</label>
+                  <select
+                    id="venue"
+                    name="venue"
+                    value={formData.venue}
                     onChange={handleInputChange}
-                    placeholder="0"
-                    min="0"
-                    step="10"
-                  />
+                    required
+                  >
+                    <option value="">Select a venue</option>
+                    {venues.map((venue) => (
+                      <option key={venue.id} value={venue.id}>
+                        {venue.venue_name} ({venue.location})
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
 
               <div className="form-row">
                 <div className="form-group">
-                  <label htmlFor="available_seats">Available Seats *</label>
+                  <label htmlFor="department">Department *</label>
+                  <select
+                    id="department"
+                    name="department"
+                    value={formData.department}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="">Select a department</option>
+                    {departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.department_name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="event_type">Event Type *</label>
+                  <select
+                    id="event_type"
+                    name="event_type"
+                    value={formData.event_type}
+                    onChange={handleInputChange}
+                    required
+                  >
+                    <option value="workshop">Workshop</option>
+                    <option value="seminar">Seminar</option>
+                    <option value="conference">Conference</option>
+                    <option value="competition">Competition</option>
+                    <option value="cultural">Cultural Event</option>
+                    <option value="sports">Sports Event</option>
+                    <option value="other">Other</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="max_capacity">Max Capacity *</label>
                   <input
-                    id="available_seats"
+                    id="max_capacity"
                     type="number"
-                    name="available_seats"
-                    value={formData.available_seats}
+                    name="max_capacity"
+                    value={formData.max_capacity}
                     onChange={handleInputChange}
                     placeholder="100"
                     min="1"
@@ -296,15 +549,44 @@ const AdminEvents = () => {
                 </div>
 
                 <div className="form-group">
-                  <label htmlFor="image_url">Image URL</label>
+                  <label htmlFor="registration_fee">Registration Fee (₹)</label>
                   <input
-                    id="image_url"
-                    type="url"
-                    name="image_url"
-                    value={formData.image_url}
+                    id="registration_fee"
+                    type="number"
+                    name="registration_fee"
+                    value={formData.registration_fee}
                     onChange={handleInputChange}
-                    placeholder="https://example.com/image.jpg"
+                    placeholder="0.00"
+                    min="0"
+                    step="0.01"
                   />
+                </div>
+              </div>
+
+              <div className="form-row">
+                <div className="form-group">
+                  <label htmlFor="registration_deadline">Registration Deadline</label>
+                  <input
+                    id="registration_deadline"
+                    type="date"
+                    name="registration_deadline"
+                    value={formData.registration_deadline}
+                    onChange={handleInputChange}
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label htmlFor="poster_image">Poster Image</label>
+                  <input
+                    id="poster_image"
+                    type="file"
+                    name="poster_image"
+                    onChange={handleFileChange}
+                    accept="image/*"
+                  />
+                  {formData.poster_image && (
+                    <div className="file-preview">Selected: {formData.poster_image.name}</div>
+                  )}
                 </div>
               </div>
 
@@ -312,11 +594,7 @@ const AdminEvents = () => {
                 <button type="submit" className="btn btn-primary btn-lg">
                   {editingId ? '✓ Update Event' : '+ Create Event'}
                 </button>
-                <button
-                  type="button"
-                  className="btn btn-secondary btn-lg"
-                  onClick={resetForm}
-                >
+                <button type="button" className="btn btn-secondary btn-lg" onClick={resetForm}>
                   Cancel
                 </button>
               </div>
@@ -337,7 +615,7 @@ const AdminEvents = () => {
 
         {loading ? (
           <div className="loading-grid">
-            {[1, 2, 3, 4].map(i => (
+            {[1, 2, 3, 4].map((i) => (
               <div key={i} className="event-row skeleton"></div>
             ))}
           </div>
@@ -352,30 +630,75 @@ const AdminEvents = () => {
               <div className="col-actions">Actions</div>
             </div>
 
-            {filteredEvents.map(event => (
+            {filteredEvents.map((event) => (
               <div key={event.id} className="table-row">
                 <div className="col-title">
                   <div className="event-name">{event.title}</div>
-                  <div className="event-category">{event.category}</div>
+                  <div className="event-category">
+                    {event.category_details?.category_name || event.category}
+                  </div>
+                  {event.poster_image_url && (
+                    <img
+                      src={event.poster_image_url}
+                      alt={event.title}
+                      style={{
+                        width: '50px',
+                        height: '50px',
+                        objectFit: 'cover',
+                        marginTop: '5px',
+                        borderRadius: '4px',
+                      }}
+                    />
+                  )}
                 </div>
 
                 <div className="col-date">
-                  {new Date(event.date).toLocaleDateString()}
+                  {event.event_date ? new Date(event.event_date).toLocaleDateString() : 'Date TBD'}
                 </div>
 
-                <div className="col-location">{event.location}</div>
+                <div className="col-location">
+                  {event.venue_details?.venue_name || event.location || 'TBD'}
+                </div>
 
                 <div className="col-price">
-                  ₹{event.price || 'Free'}
+                  {event.registration_fee && parseFloat(event.registration_fee) > 0
+                    ? `₹${parseFloat(event.registration_fee).toFixed(2)}`
+                    : 'Free'}
                 </div>
 
                 <div className="col-seats">
-                  <span className={`seats-badge ${event.available_seats > 0 ? 'available' : 'sold-out'}`}>
+                  <span
+                    className={`seats-badge ${event.available_seats > 0 ? 'available' : 'sold-out'}`}
+                  >
                     {event.available_seats} seats
                   </span>
                 </div>
 
+                <div className="col-status">
+                  <span className={`status-badge status-${event.status}`}>
+                    {event.status.charAt(0).toUpperCase() + event.status.slice(1)}
+                  </span>
+                </div>
+
                 <div className="col-actions">
+                  {event.status === 'draft' && (
+                    <button
+                      className="btn btn-sm btn-success"
+                      onClick={() => handlePublish(event.id)}
+                      title="Publish event"
+                    >
+                      📤 Publish
+                    </button>
+                  )}
+                  {event.status === 'published' && (
+                    <button
+                      className="btn btn-sm btn-warning"
+                      onClick={() => handleCancel(event.id)}
+                      title="Cancel event"
+                    >
+                      ❌ Cancel
+                    </button>
+                  )}
                   <button
                     className="btn btn-sm btn-primary"
                     onClick={() => handleEdit(event)}
@@ -399,9 +722,7 @@ const AdminEvents = () => {
             <span className="empty-icon">📭</span>
             <h3>No events found</h3>
             <p>
-              {searchQuery
-                ? 'Try adjusting your search'
-                : 'Create your first event to get started'}
+              {searchQuery ? 'Try adjusting your search' : 'Create your first event to get started'}
             </p>
           </div>
         )}
@@ -409,22 +730,14 @@ const AdminEvents = () => {
 
       {deleteConfirm && (
         <div className="modal-overlay" onClick={() => setDeleteConfirm(null)}>
-          <div className="modal" onClick={e => e.stopPropagation()}>
+          <div className="modal" onClick={(e) => e.stopPropagation()}>
             <h2>Delete Event?</h2>
-            <p>
-              Are you sure you want to delete this event? This action cannot be undone.
-            </p>
+            <p>Are you sure you want to delete this event? This action cannot be undone.</p>
             <div className="modal-actions">
-              <button
-                className="btn btn-danger btn-lg"
-                onClick={handleDelete}
-              >
+              <button className="btn btn-danger btn-lg" onClick={handleDelete}>
                 🗑 Delete
               </button>
-              <button
-                className="btn btn-secondary btn-lg"
-                onClick={() => setDeleteConfirm(null)}
-              >
+              <button className="btn btn-secondary btn-lg" onClick={() => setDeleteConfirm(null)}>
                 Cancel
               </button>
             </div>

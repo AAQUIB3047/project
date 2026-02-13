@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import axios from 'axios';
+import PropTypes from 'prop-types';
 import './Auth.css';
 
 const Register = ({ setAuth, setUser }) => {
@@ -10,6 +11,7 @@ const Register = ({ setAuth, setUser }) => {
     password_confirm: '',
     first_name: '',
     last_name: '',
+    role: 'participant',
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -40,11 +42,12 @@ const Register = ({ setAuth, setUser }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/users/register/', {
+      const response = await axios.post('http://localhost:8001/api/users/register/', {
         email: formData.email,
         password: formData.password,
         first_name: formData.first_name,
         last_name: formData.last_name,
+        role: formData.role,
       });
 
       const { access, refresh, user } = response.data;
@@ -119,6 +122,21 @@ const Register = ({ setAuth, setUser }) => {
           </div>
 
           <div className="form-group">
+            <label htmlFor="role">I want to join as</label>
+            <select
+              id="role"
+              name="role"
+              value={formData.role}
+              onChange={handleChange}
+              className="form-select"
+              required
+            >
+              <option value="participant">Participant</option>
+              <option value="organizer">Event Organizer</option>
+            </select>
+          </div>
+
+          <div className="form-group">
             <label htmlFor="password">Password</label>
             <input
               id="password"
@@ -166,6 +184,11 @@ const Register = ({ setAuth, setUser }) => {
       </div>
     </div>
   );
+};
+
+Register.propTypes = {
+  setAuth: PropTypes.func.isRequired,
+  setUser: PropTypes.func.isRequired,
 };
 
 export default Register;

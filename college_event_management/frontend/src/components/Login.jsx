@@ -22,7 +22,7 @@ const Login = () => {
   // Optimized fetch with loading state
   const fetchEvents = useCallback(async () => {
     try {
-      const response = await axios.get('http://localhost:8000/api/events/');
+      const response = await axios.get('http://localhost:8000/api/events/events/');
       setEvents(Array.isArray(response.data) ? response.data : []);
     } catch (err) {
       console.error('Error fetching events:', err);
@@ -82,7 +82,8 @@ const Login = () => {
         <div className="hero-content">
           <h1 className="hero-title">🎭 EventHub</h1>
           <p className="hero-subtitle">
-            Your gateway to amazing college events. Discover, connect, and create unforgettable experiences with your campus community.
+            Your gateway to amazing college events. Discover, connect, and create unforgettable
+            experiences with your campus community.
           </p>
           <div className="hero-actions">
             <button className="btn-primary" onClick={() => navigate('/events')}>
@@ -112,10 +113,13 @@ const Login = () => {
 
           {featuredEvents.length > 0 ? (
             <div className="carousel">
-              <div className="carousel-track" style={{ transform: `translateX(-${currentSlide * 100}%)` }}>
+              <div
+                className="carousel-track"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
                 {Array.from({ length: Math.ceil(featuredEvents.length / 3) }, (_, slideIndex) => (
                   <div key={slideIndex} className="carousel-slide">
-                    {featuredEvents.slice(slideIndex * 3, (slideIndex + 1) * 3).map(event => (
+                    {featuredEvents.slice(slideIndex * 3, (slideIndex + 1) * 3).map((event) => (
                       <div key={event.id} className="event-card">
                         <div className="event-poster">
                           <div className="poster-overlay">
@@ -126,8 +130,12 @@ const Login = () => {
                           <div className="poster-content">
                             <h3 className="event-title">{event.title}</h3>
                             <div className="event-meta">
-                              <span className="event-date">📅 {new Date(event.date).toLocaleDateString()}</span>
-                              <span className="event-location">📍 {event.location || 'Campus'}</span>
+                              <span className="event-date">
+                                📅 {new Date(event.date).toLocaleDateString()}
+                              </span>
+                              <span className="event-location">
+                                📍 {event.location || 'Campus'}
+                              </span>
                             </div>
                           </div>
                         </div>

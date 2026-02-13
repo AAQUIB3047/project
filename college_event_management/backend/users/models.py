@@ -21,10 +21,8 @@ class Department(models.Model):
 
 class User(AbstractUser):
     ROLE_CHOICES = [
-        ('student', 'Student'),
-        ('faculty', 'Faculty'),
-        ('organizer', 'Organizer'),
-        ('admin', 'Admin'),
+        ('participant', 'Participant'),
+        ('organizer', 'Event Organizer'),
     ]
     
     BRANCH_CHOICES = [
@@ -37,7 +35,7 @@ class User(AbstractUser):
         ('other', 'Other'),
     ]
     
-    role = models.CharField(max_length=10, choices=ROLE_CHOICES, default='student')
+    role = models.CharField(max_length=12, choices=ROLE_CHOICES, default='participant')
     phone_number = models.CharField(max_length=15, blank=True)
     department = models.ForeignKey(Department, on_delete=models.SET_NULL, null=True, blank=True, related_name='users')
     branch = models.CharField(max_length=20, choices=BRANCH_CHOICES, default='other', blank=True)
@@ -91,7 +89,7 @@ class Faculty(models.Model):
 
 
 class AuditLog(models.Model):
-    """Audit log for tracking admin actions"""
+    """Audit log for tracking organizer actions"""
     ACTION_CHOICES = [
         ('create', 'Create'),
         ('update', 'Update'),
@@ -102,9 +100,9 @@ class AuditLog(models.Model):
         ('logout', 'Logout'),
     ]
     
-    admin = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': 'admin'}, related_name='audit_logs_created')
+    organizer = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, limit_choices_to={'role': 'organizer'}, related_name='audit_logs_created')
     action_type = models.CharField(max_length=50, choices=ACTION_CHOICES)
-    entity_type = models.CharField(max_length=100)  # e.g., 'Event', 'Student', 'Registration'
+    entity_type = models.CharField(max_length=100)  # e.g., 'Event', 'Participant', 'Registration'
     entity_id = models.IntegerField()
     description = models.TextField(blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
@@ -117,7 +115,7 @@ class AuditLog(models.Model):
         indexes = [models.Index(fields=['entity_type', 'entity_id'])]
 
     def __str__(self):
-        return f"{self.admin} - {self.action_type} on {self.entity_type} ({self.entity_id})"
+        return f"{self.organizer} - {self.action_type} on {self.entity_type} ({self.entity_id})"
 
 
 class GoogleAuth(models.Model):

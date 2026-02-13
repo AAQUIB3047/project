@@ -8,7 +8,7 @@
  * Wraps fetch with common headers and error handling
  */
 export const api = {
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8000',
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:8001',
 
   async request(endpoint, options = {}) {
     const url = `${this.baseURL}${endpoint}`;

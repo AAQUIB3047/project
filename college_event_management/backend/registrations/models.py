@@ -21,7 +21,7 @@ class Registration(models.Model):
     ]
     
     event = models.ForeignKey(Event, on_delete=models.CASCADE, related_name='registrations')
-    student = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'student'}, related_name='event_registrations')
+    participant = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'role': 'participant'}, related_name='event_registrations')
     registration_time = models.DateTimeField(auto_now_add=True)
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='pending')
     payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS_CHOICES, default='pending')
@@ -32,12 +32,12 @@ class Registration(models.Model):
     class Meta:
         verbose_name = 'Registration'
         verbose_name_plural = 'Registrations'
-        unique_together = ('event', 'student')
+        unique_together = ('event', 'participant')
         ordering = ['-registration_time']
         indexes = [
             models.Index(fields=['event', 'status']),
-            models.Index(fields=['student', 'status']),
+            models.Index(fields=['participant', 'status']),
         ]
 
     def __str__(self):
-        return f"{self.student.get_full_name()} - {self.event.title} ({self.status})"
+        return f"{self.participant.get_full_name()} - {self.event.title} ({self.status})"

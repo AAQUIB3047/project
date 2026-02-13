@@ -84,10 +84,10 @@ class FacultyAdmin(admin.ModelAdmin):
 
 @admin.register(AuditLog)
 class AuditLogAdmin(admin.ModelAdmin):
-    list_display = ('timestamp', 'admin', 'action_type', 'entity_type', 'entity_id')
+    list_display = ('timestamp', 'organizer', 'action_type', 'entity_type', 'entity_id')
     list_filter = ('action_type', 'entity_type', 'timestamp')
-    search_fields = ('admin__email', 'entity_type')
-    readonly_fields = ('timestamp', 'admin', 'action_type', 'entity_type', 'entity_id', 'description', 'ip_address')
+    search_fields = ('organizer__email', 'entity_type')
+    readonly_fields = ('timestamp', 'organizer', 'action_type', 'entity_type', 'entity_id', 'description', 'ip_address')
     
     def has_add_permission(self, request):
         return False

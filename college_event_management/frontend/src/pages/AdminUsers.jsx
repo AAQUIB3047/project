@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import axios from 'axios';
 import './AdminUsers.css';
 
@@ -10,26 +10,26 @@ const AdminUsers = () => {
 
   const token = localStorage.getItem('access_token');
 
-  useEffect(() => {
-    fetchUsers();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8000/api/users/', {
+      const response = await axios.get('http://localhost:8001/api/users/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
-    } catch (error) {
-      console.error('Failed to fetch users:', error);
+    } catch {
+      // Error fetching users - will show empty state
     } finally {
       setLoading(false);
     }
-  };
+  }, [token]);
 
-  const filteredUsers = users.filter(user => {
-    const matchesSearch = 
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch =
       user.email?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.first_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.last_name?.toLowerCase().includes(searchQuery.toLowerCase());
@@ -54,7 +54,7 @@ const AdminUsers = () => {
             </div>
             <div className="stat">
               <span className="stat-label">Admins</span>
-              <span className="stat-value">{users.filter(u => u.role === 'admin').length}</span>
+              <span className="stat-value">{users.filter((u) => u.role === 'admin').length}</span>
             </div>
           </div>
         </div>
@@ -74,9 +74,8 @@ const AdminUsers = () => {
             className="filter-select"
           >
             <option value="all">All Roles</option>
-            <option value="admin">Admins</option>
             <option value="organizer">Organizers</option>
-            <option value="student">Students</option>
+            <option value="participant">Participants</option>
           </select>
 
           <span className="result-count">{filteredUsers.length} users</span>
@@ -84,13 +83,13 @@ const AdminUsers = () => {
 
         {loading ? (
           <div className="loading-grid">
-            {[1, 2, 3, 4, 5, 6].map(i => (
+            {[1, 2, 3, 4, 5, 6].map((i) => (
               <div key={i} className="user-card skeleton"></div>
             ))}
           </div>
         ) : filteredUsers.length > 0 ? (
           <div className="users-grid">
-            {filteredUsers.map(user => (
+            {filteredUsers.map((user) => (
               <div key={user.id} className="user-card card">
                 <div className="user-avatar">
                   {(user.first_name || user.email || 'U').charAt(0).toUpperCase()}
@@ -103,9 +102,7 @@ const AdminUsers = () => {
                   <p className="user-email">{user.email}</p>
 
                   <div className="user-meta">
-                    <span className={`role-badge role-${user.role}`}>
-                      {user.role}
-                    </span>
+                    <span className={`role-badge role-${user.role}`}>{user.role}</span>
                     <span className={`status-badge ${user.is_active ? 'active' : 'inactive'}`}>
                       {user.is_active ? '✓ Active' : '✕ Inactive'}
                     </span>
@@ -113,9 +110,7 @@ const AdminUsers = () => {
                 </div>
 
                 <div className="user-actions">
-                  <button className="btn btn-sm btn-secondary">
-                    View Profile
-                  </button>
+                  <button className="btn btn-sm btn-secondary">View Profile</button>
                 </div>
               </div>
             ))}

@@ -39,8 +39,9 @@ class EventSerializer(serializers.ModelSerializer):
     created_by_name = serializers.CharField(source='created_by.get_full_name', read_only=True)
     department_name = serializers.CharField(source='department.department_name', read_only=True)
     registration_count = serializers.SerializerMethodField()
-    coordinators = EventCoordinatorSerializer(many=True, read_only=True, source='coordinators')
-    resources = EventResourceSerializer(many=True, read_only=True, source='resources')
+    coordinators = EventCoordinatorSerializer(many=True, read_only=True)
+    resources = EventResourceSerializer(many=True, read_only=True)
+    poster_image_url = serializers.SerializerMethodField()
     
     class Meta:
         model = Event
@@ -49,11 +50,20 @@ class EventSerializer(serializers.ModelSerializer):
             'venue', 'venue_details', 'category', 'category_details', 'department',
             'department_name', 'max_capacity', 'current_registrations', 'registration_count',
             'event_type', 'status', 'registration_fee', 'registration_deadline',
-            'poster_image', 'created_by', 'created_by_name', 'created_at', 'updated_at',
+            'poster_image', 'poster_image_url', 'created_by', 'created_by_name', 'created_at', 'updated_at',
             'coordinators', 'resources'
         ]
-        read_only_fields = ('created_at', 'updated_at', 'created_by', 'registration_count')
+        read_only_fields = ('created_at', 'updated_at', 'created_by', 'registration_count', 'poster_image_url')
     
     def get_registration_count(self, obj):
         """Get count of confirmed registrations"""
         return obj.registrations.filter(status='confirmed').count()
+    
+    def get_poster_image_url(self, obj):
+        """Get full URL for poster image"""
+        if obj.poster_image:
+            request = self.context.get('request')
+            if request:
+                return request.build_absolute_uri(obj.poster_image.url)
+            return obj.poster_image.url
+        return None

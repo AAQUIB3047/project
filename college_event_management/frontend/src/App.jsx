@@ -143,7 +143,7 @@ function App() {
                 <Route
                   path="/admin"
                   element={
-                    isAuthenticated && user?.role === 'admin' ? (
+                    isAuthenticated && user?.role === 'organizer' ? (
                       <AdminDashboard />
                     ) : (
                       <Navigate to="/" replace />

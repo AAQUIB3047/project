@@ -1,0 +1,4 @@
+title,description,event_date,start_time,end_time,venue,department,max_capacity,category,event_type,registration_fee,registration_deadline,status
+"Summer Workshop 2025","Learn the latest technologies in this comprehensive workshop","2025-06-15","09:00","17:00","1","1","50","1","workshop","0.00","2025-06-10","draft"
+"Tech Seminar","Industry experts share insights on emerging technologies","2025-07-20","14:00","16:00","2","2","100","2","seminar","50.00","2025-07-15","published"
+"Annual Cultural Fest","Join us for a celebration of music, dance, and drama","2025-08-10","18:00","22:00","3","3","500","3","cultural","100.00","2025-08-05","draft"

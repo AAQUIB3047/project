@@ -31,7 +31,7 @@ const Login = ({ setAuth, setUser }) => {
     setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8000/api/users/login/', {
+      const response = await axios.post('http://localhost:8001/api/auth/login/', {
         email,
         password,
       });
@@ -44,7 +44,13 @@ const Login = ({ setAuth, setUser }) => {
 
       setAuth(true);
       setUser(user);
-      navigate('/');
+
+      // Redirect based on user role
+      if (user.role === 'organizer') {
+        navigate('/dashboard');
+      } else {
+        navigate('/');
+      }
     } catch (err) {
       setError(
         err.response?.data?.error || err.response?.data?.detail || 'Login failed. Please try again.'
@@ -74,7 +80,7 @@ const Login = ({ setAuth, setUser }) => {
       const token = googleCredential.credential;
       const decodedToken = parseJwt(token);
 
-      const response = await axios.post('http://localhost:8000/api/users/google_login/', {
+      const response = await axios.post('http://localhost:8001/api/users/google_login/', {
         token: token,
         name: decodedToken.name,
         email: decodedToken.email,

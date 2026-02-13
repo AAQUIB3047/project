@@ -81,7 +81,7 @@ class Event(models.Model):
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='draft')
     registration_fee = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
     registration_deadline = models.DateField(null=True, blank=True)
-    poster_image = models.URLField(blank=True, null=True)
+    poster_image = models.ImageField(upload_to='event_posters/', blank=True, null=True)
     created_by = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, related_name='created_events')
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)

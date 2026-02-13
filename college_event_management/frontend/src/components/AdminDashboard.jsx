@@ -22,8 +22,8 @@ const AdminDashboard = () => {
   const fetchDashboardData = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/admin/dashboard/', {
-        headers: { Authorization: `Token ${token}` }
+      const response = await axios.get('http://localhost:8001/api/admin/dashboard/', {
+        headers: { Authorization: `Token ${token}` },
       });
       setDashboardData(response.data);
     } catch (error) {
@@ -34,8 +34,8 @@ const AdminDashboard = () => {
   const fetchUsers = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/admin/users/', {
-        headers: { Authorization: `Token ${token}` }
+      const response = await axios.get('http://localhost:8001/api/admin/users/', {
+        headers: { Authorization: `Token ${token}` },
       });
       setUsers(response.data);
     } catch (error) {
@@ -46,8 +46,8 @@ const AdminDashboard = () => {
   const fetchEvents = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/admin/events/', {
-        headers: { Authorization: `Token ${token}` }
+      const response = await axios.get('http://localhost:8001/api/admin/events/', {
+        headers: { Authorization: `Token ${token}` },
       });
       setEvents(response.data);
     } catch (error) {
@@ -58,8 +58,8 @@ const AdminDashboard = () => {
   const fetchReports = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await axios.get('http://localhost:8000/api/reports/', {
-        headers: { Authorization: `Token ${token}` }
+      const response = await axios.get('http://localhost:8001/api/reports/', {
+        headers: { Authorization: `Token ${token}` },
       });
       setReports(response.data);
       setLoading(false);
@@ -73,10 +73,10 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this user?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:8000/api/admin/users/${id}/`, {
-          headers: { Authorization: `Token ${token}` }
+        await axios.delete(`http://localhost:8001/api/admin/users/${id}/`, {
+          headers: { Authorization: `Token ${token}` },
         });
-        setUsers(users.filter(user => user.id !== id));
+        setUsers(users.filter((user) => user.id !== id));
       } catch (error) {
         console.error('Error deleting user:', error);
       }
@@ -87,10 +87,10 @@ const AdminDashboard = () => {
     if (window.confirm('Are you sure you want to delete this event?')) {
       try {
         const token = localStorage.getItem('token');
-        await axios.delete(`http://localhost:8000/api/admin/events/${id}/`, {
-          headers: { Authorization: `Token ${token}` }
+        await axios.delete(`http://localhost:8001/api/admin/events/${id}/`, {
+          headers: { Authorization: `Token ${token}` },
         });
-        setEvents(events.filter(event => event.id !== id));
+        setEvents(events.filter((event) => event.id !== id));
       } catch (error) {
         console.error('Error deleting event:', error);
       }
@@ -100,10 +100,16 @@ const AdminDashboard = () => {
   const handleApproveEvent = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:8000/api/admin/events/${id}/`, { status: 'approved' }, {
-        headers: { Authorization: `Token ${token}` }
-      });
-      setEvents(events.map(event => event.id === id ? { ...event, status: 'approved' } : event));
+      await axios.patch(
+        `http://localhost:8001/api/admin/events/${id}/`,
+        { status: 'approved' },
+        {
+          headers: { Authorization: `Token ${token}` },
+        }
+      );
+      setEvents(
+        events.map((event) => (event.id === id ? { ...event, status: 'approved' } : event))
+      );
     } catch (error) {
       console.error('Error approving event:', error);
     }
@@ -112,10 +118,16 @@ const AdminDashboard = () => {
   const handleRejectEvent = async (id) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.patch(`http://localhost:8000/api/admin/events/${id}/`, { status: 'rejected' }, {
-        headers: { Authorization: `Token ${token}` }
-      });
-      setEvents(events.map(event => event.id === id ? { ...event, status: 'rejected' } : event));
+      await axios.patch(
+        `http://localhost:8001/api/admin/events/${id}/`,
+        { status: 'rejected' },
+        {
+          headers: { Authorization: `Token ${token}` },
+        }
+      );
+      setEvents(
+        events.map((event) => (event.id === id ? { ...event, status: 'rejected' } : event))
+      );
     } catch (error) {
       console.error('Error rejecting event:', error);
     }
@@ -181,14 +193,18 @@ const AdminDashboard = () => {
             <span className="activity-icon">📝</span>
             <div>
               <p>Registrations (7 days)</p>
-              <span className="activity-number">{dashboardData.recent_activity?.registrations_last_7_days || 0}</span>
+              <span className="activity-number">
+                {dashboardData.recent_activity?.registrations_last_7_days || 0}
+              </span>
             </div>
           </div>
           <div className="activity-item">
             <span className="activity-icon">👀</span>
             <div>
               <p>Attendance (7 days)</p>
-              <span className="activity-number">{dashboardData.recent_activity?.attendance_last_7_days || 0}</span>
+              <span className="activity-number">
+                {dashboardData.recent_activity?.attendance_last_7_days || 0}
+              </span>
             </div>
           </div>
         </section>
@@ -215,16 +231,16 @@ const AdminDashboard = () => {
         <section className="user-breakdown-card">
           <h3>User Breakdown</h3>
           <div className="breakdown-item">
-            <span className="breakdown-label">Students</span>
-            <span className="breakdown-number">{dashboardData.user_breakdown?.students || 0}</span>
+            <span className="breakdown-label">Participants</span>
+            <span className="breakdown-number">
+              {dashboardData.user_breakdown?.participants || 0}
+            </span>
           </div>
           <div className="breakdown-item">
             <span className="breakdown-label">Organizers</span>
-            <span className="breakdown-number">{dashboardData.user_breakdown?.organizers || 0}</span>
-          </div>
-          <div className="breakdown-item">
-            <span className="breakdown-label">Admins</span>
-            <span className="breakdown-number">{dashboardData.user_breakdown?.admins || 0}</span>
+            <span className="breakdown-number">
+              {dashboardData.user_breakdown?.organizers || 0}
+            </span>
           </div>
         </section>
 
@@ -232,7 +248,7 @@ const AdminDashboard = () => {
           <h3>Recent Events</h3>
           {dashboardData.recent_events?.length > 0 ? (
             <ul className="events-list">
-              {dashboardData.recent_events.slice(0, 5).map(event => (
+              {dashboardData.recent_events.slice(0, 5).map((event) => (
                 <li key={event.id} className="event-item">
                   <div className="event-info">
                     <span className="event-title">{event.title}</span>
@@ -249,20 +265,23 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const filteredUsers = users.filter(user =>
-    (userFilters.role === '' || user.role === userFilters.role) &&
-    (userFilters.department === '' || user.department === userFilters.department)
+  const filteredUsers = users.filter(
+    (user) =>
+      (userFilters.role === '' || user.role === userFilters.role) &&
+      (userFilters.department === '' || user.department === userFilters.department)
   );
 
   const renderUsers = () => (
     <div className="users-content">
       <h2>Manage Users</h2>
       <div className="filters">
-        <select value={userFilters.role} onChange={(e) => setUserFilters({ ...userFilters, role: e.target.value })}>
+        <select
+          value={userFilters.role}
+          onChange={(e) => setUserFilters({ ...userFilters, role: e.target.value })}
+        >
           <option value="">All Roles</option>
-          <option value="student">Student</option>
+          <option value="participant">Participant</option>
           <option value="organizer">Organizer</option>
-          <option value="admin">Admin</option>
         </select>
         <input
           type="text"
@@ -284,7 +303,7 @@ const AdminDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredUsers.map(user => (
+          {filteredUsers.map((user) => (
             <tr key={user.id}>
               <td>{user.id}</td>
               <td>{user.username}</td>
@@ -302,16 +321,21 @@ const AdminDashboard = () => {
     </div>
   );
 
-  const filteredEvents = events.filter(event =>
-    (eventFilters.status === '' || event.status === eventFilters.status) &&
-    (eventFilters.organizer === '' || event.organizer__username.toLowerCase().includes(eventFilters.organizer.toLowerCase()))
+  const filteredEvents = events.filter(
+    (event) =>
+      (eventFilters.status === '' || event.status === eventFilters.status) &&
+      (eventFilters.organizer === '' ||
+        event.organizer__username.toLowerCase().includes(eventFilters.organizer.toLowerCase()))
   );
 
   const renderEvents = () => (
     <div className="events-content">
       <h2>Manage Events</h2>
       <div className="filters">
-        <select value={eventFilters.status} onChange={(e) => setEventFilters({ ...eventFilters, status: e.target.value })}>
+        <select
+          value={eventFilters.status}
+          onChange={(e) => setEventFilters({ ...eventFilters, status: e.target.value })}
+        >
           <option value="">All Statuses</option>
           <option value="pending">Pending</option>
           <option value="approved">Approved</option>
@@ -337,7 +361,7 @@ const AdminDashboard = () => {
           </tr>
         </thead>
         <tbody>
-          {filteredEvents.map(event => (
+          {filteredEvents.map((event) => (
             <tr key={event.id}>
               <td>{event.id}</td>
               <td>{event.title}</td>
@@ -410,19 +434,31 @@ const AdminDashboard = () => {
       <aside className="admin-sidebar">
         <nav className="sidebar-nav">
           <ul>
-            <li className={activeTab === 'overview' ? 'active' : ''} onClick={() => setActiveTab('overview')}>
+            <li
+              className={activeTab === 'overview' ? 'active' : ''}
+              onClick={() => setActiveTab('overview')}
+            >
               <span className="nav-icon">📊</span>
               Overview
             </li>
-            <li className={activeTab === 'users' ? 'active' : ''} onClick={() => setActiveTab('users')}>
+            <li
+              className={activeTab === 'users' ? 'active' : ''}
+              onClick={() => setActiveTab('users')}
+            >
               <span className="nav-icon">👥</span>
               Users
             </li>
-            <li className={activeTab === 'events' ? 'active' : ''} onClick={() => setActiveTab('events')}>
+            <li
+              className={activeTab === 'events' ? 'active' : ''}
+              onClick={() => setActiveTab('events')}
+            >
               <span className="nav-icon">📅</span>
               Events
             </li>
-            <li className={activeTab === 'reports' ? 'active' : ''} onClick={() => setActiveTab('reports')}>
+            <li
+              className={activeTab === 'reports' ? 'active' : ''}
+              onClick={() => setActiveTab('reports')}
+            >
               <span className="nav-icon">📋</span>
               Reports
             </li>
@@ -432,9 +468,7 @@ const AdminDashboard = () => {
 
       {/* Main Content */}
       <main className="admin-main">
-        <div className="main-content">
-          {renderContent()}
-        </div>
+        <div className="main-content">{renderContent()}</div>
       </main>
     </div>
   );

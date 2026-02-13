@@ -164,6 +164,19 @@
   opacity: 0.6;
 }
 
+.btn-register.registered {
+  background: var(--warning-color, #f59e0b);
+}
+
+.btn-register.registered:hover {
+  background: var(--warning-dark, #d97706);
+}
+
+.btn-register.loading {
+  background: #9ca3af;
+  cursor: wait;
+}
+
 /* Responsive */
 @media (max-width: 768px) {
   .event-card {

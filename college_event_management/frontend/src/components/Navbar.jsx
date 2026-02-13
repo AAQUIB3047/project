@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
+import PropTypes from 'prop-types';
 import './Navbar.css';
 
 const Navbar = ({ isAuthenticated, user, onLogout }) => {
@@ -20,7 +21,7 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
           <span className="brand-text">EventHub</span>
         </Link>
 
-        <button 
+        <button
           className={`mobile-toggle ${mobileMenuOpen ? 'active' : ''}`}
           onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
         >
@@ -39,27 +40,34 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
               <Link to="/my-bookings" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
                 My Bookings
               </Link>
-              {user?.role === 'admin' && (
+              {(user?.role === 'admin' || user?.role === 'organizer') && (
                 <Link to="/admin" className="nav-link" onClick={() => setMobileMenuOpen(false)}>
-                  Admin
+                  Admin Panel
                 </Link>
               )}
               <div className="nav-user">
-                <span className="user-name">{user?.name || user?.email}</span>
-                <button 
-                  className="btn btn-secondary btn-sm"
-                  onClick={handleLogout}
-                >
+                <span className="user-name">
+                  {user?.first_name ? `${user.first_name} ${user.last_name}` : user?.email}
+                </span>
+                <button className="btn btn-secondary btn-sm" onClick={handleLogout}>
                   Logout
                 </button>
               </div>
             </>
           ) : (
             <>
-              <Link to="/login" className="btn btn-secondary btn-sm" onClick={() => setMobileMenuOpen(false)}>
+              <Link
+                to="/login"
+                className="btn btn-secondary btn-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Sign In
               </Link>
-              <Link to="/register" className="btn btn-primary btn-sm" onClick={() => setMobileMenuOpen(false)}>
+              <Link
+                to="/register"
+                className="btn btn-primary btn-sm"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 Sign Up
               </Link>
             </>
@@ -68,6 +76,17 @@ const Navbar = ({ isAuthenticated, user, onLogout }) => {
       </div>
     </nav>
   );
+};
+
+Navbar.propTypes = {
+  isAuthenticated: PropTypes.bool.isRequired,
+  user: PropTypes.shape({
+    first_name: PropTypes.string,
+    last_name: PropTypes.string,
+    email: PropTypes.string,
+    role: PropTypes.string,
+  }),
+  onLogout: PropTypes.func.isRequired,
 };
 
 export default Navbar;

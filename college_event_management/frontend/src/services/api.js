@@ -16,35 +16,35 @@ export const eventsService = {
    */
   async getAll(filters = {}) {
     const params = new URLSearchParams(filters);
-    return api.get(`/api/events/?${params}`);
+    return api.get(`/api/events/events/?${params}`);
   },
 
   /**
    * Get single event
    */
   async getById(id) {
-    return api.get(`/api/events/${id}/`);
+    return api.get(`/api/events/events/${id}/`);
   },
 
   /**
    * Create new event (admin only)
    */
   async create(data) {
-    return api.post('/api/events/', data);
+    return api.post('/api/events/events/', data);
   },
 
   /**
    * Update event (admin only)
    */
   async update(id, data) {
-    return api.put(`/api/events/${id}/`, data);
+    return api.put(`/api/events/events/${id}/`, data);
   },
 
   /**
    * Delete event (admin only)
    */
   async delete(id) {
-    return api.delete(`/api/events/${id}/`);
+    return api.delete(`/api/events/events/${id}/`);
   },
 };
 
@@ -103,7 +103,7 @@ export const usersService = {
   },
 
   /**
-   * Get student enrollments (admin only)
+   * Get participant enrollments (organizer only)
    */
   async getEnrollments(filters = {}) {
     const params = new URLSearchParams(filters);

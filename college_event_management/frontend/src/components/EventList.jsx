@@ -13,7 +13,7 @@ const EventList = () => {
     const fetchEvents = async () => {
       try {
         const token = localStorage.getItem('token');
-        const response = await axios.get('http://localhost:8000/api/events/events/', {
+        const response = await axios.get('http://localhost:8001/api/events/events/', {
           headers: { Authorization: `Token ${token}` },
         });
         setEvents(Array.isArray(response.data) ? response.data : []);
@@ -29,9 +29,10 @@ const EventList = () => {
 
   // Memoized filtered and sorted events
   const filteredEvents = useMemo(() => {
-    let filtered = events.filter(event => {
-      const matchesSearch = event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           event.description.toLowerCase().includes(searchTerm.toLowerCase());
+    let filtered = events.filter((event) => {
+      const matchesSearch =
+        event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        event.description.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = statusFilter === 'all' || event.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
@@ -56,9 +57,13 @@ const EventList = () => {
   const handleRegister = async (eventId) => {
     try {
       const token = localStorage.getItem('token');
-      await axios.post(`http://localhost:8000/api/registrations/`, { event: eventId }, {
-        headers: { Authorization: `Token ${token}` },
-      });
+      await axios.post(
+        `http://localhost:8001/api/registrations/`,
+        { event: eventId },
+        {
+          headers: { Authorization: `Token ${token}` },
+        }
+      );
       alert('Registered successfully!');
     } catch (err) {
       alert('Registration failed. You may already be registered or the event is full.');
@@ -67,10 +72,14 @@ const EventList = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case 'approved': return '#4caf50';
-      case 'pending': return '#ff9800';
-      case 'rejected': return '#f44336';
-      default: return '#9e9e9e';
+      case 'approved':
+        return '#4caf50';
+      case 'pending':
+        return '#ff9800';
+      case 'rejected':
+        return '#f44336';
+      default:
+        return '#9e9e9e';
     }
   };
 
@@ -139,7 +148,7 @@ const EventList = () => {
         <div className="container">
           {filteredEvents.length > 0 ? (
             <div className="events-grid">
-              {filteredEvents.map(event => (
+              {filteredEvents.map((event) => (
                 <div key={event.id} className="event-card">
                   <div className="event-image">
                     <span>📅</span>
@@ -157,21 +166,24 @@ const EventList = () => {
                     <p className="event-description">
                       {event.description.length > 120
                         ? `${event.description.substring(0, 120)}...`
-                        : event.description
-                      }
+                        : event.description}
                     </p>
                     <div className="event-meta">
                       <div className="meta-item">
                         <span className="meta-icon">📅</span>
-                        <span>{new Date(event.date).toLocaleDateString()}</span>
+                        <span>
+                          {event.event_date
+                            ? new Date(event.event_date).toLocaleDateString()
+                            : 'Date TBD'}
+                        </span>
                       </div>
                       <div className="meta-item">
                         <span className="meta-icon">⏰</span>
-                        <span>{event.time || 'TBD'}</span>
+                        <span>{event.start_time || 'Time TBD'}</span>
                       </div>
                       <div className="meta-item">
                         <span className="meta-icon">📍</span>
-                        <span>{event.location || 'TBD'}</span>
+                        <span>{event.venue_details?.venue_name || event.location || 'TBD'}</span>
                       </div>
                     </div>
                     <button

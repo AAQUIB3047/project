@@ -124,8 +124,13 @@
 }
 
 @keyframes float {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-20px); }
+  0%,
+  100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-20px);
+  }
 }
 
 /* Categories Section */
@@ -330,7 +335,12 @@
 }
 
 .skeleton {
-  background: linear-gradient(90deg, var(--card-bg) 25%, rgba(34, 197, 94, 0.1) 50%, var(--card-bg) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--card-bg) 25%,
+    rgba(34, 197, 94, 0.1) 50%,
+    var(--card-bg) 75%
+  );
   background-size: 200% 100%;
   animation: loading 2s infinite;
   border-radius: 12px;
@@ -338,8 +348,12 @@
 }
 
 @keyframes loading {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 .empty-state {
@@ -360,6 +374,139 @@
 
 .empty-state p {
   color: var(--text-secondary);
+}
+
+/* Loading States */
+.loading-message {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-secondary);
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--border-color);
+  border-top: 3px solid var(--primary-green);
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 20px;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.loading-message p {
+  font-size: 1.1rem;
+  margin: 0;
+}
+
+/* Home Page Styles */
+.home {
+  min-height: 100vh;
+}
+
+/* Admin Access Banner */
+.admin-access-banner {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+  padding: 16px 0;
+  border-bottom: 2px solid #3b82f6;
+  position: relative;
+  overflow: hidden;
+}
+
+.admin-access-banner::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(59, 130, 246, 0.2), transparent);
+  animation: shimmer 3s infinite;
+}
+
+@keyframes shimmer {
+  0% {
+    left: -100%;
+  }
+  100% {
+    left: 100%;
+  }
+}
+
+.admin-access-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.admin-badge {
+  background: rgba(59, 130, 246, 0.2);
+  color: #93c5fd;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  white-space: nowrap;
+}
+
+.admin-access-content p {
+  margin: 0;
+  color: #cbd5e1;
+  font-size: 14px;
+  flex: 1;
+  min-width: 200px;
+}
+
+.btn-admin {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+}
+
+.btn-admin:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+  background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+}
+
+/* Responsive styles for admin banner */
+@media (max-width: 768px) {
+  .admin-access-content {
+    flex-direction: column;
+    text-align: center;
+    gap: 12px;
+  }
+
+  .admin-access-content p {
+    min-width: auto;
+  }
+
+  .btn-admin {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 @media (max-width: 1024px) {
