@@ -47,7 +47,7 @@ const AdminEvents = () => {
 
   const fetchVenues = async () => {
     try {
-      const response = await axios.get('http://localhost:8001/api/events/venues/', {
+      const response = await axios.get('http://localhost:8000/api/events/venues/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setVenues(Array.isArray(response.data) ? response.data : []);
@@ -60,7 +60,7 @@ const AdminEvents = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await axios.get('http://localhost:8001/api/events/categories/', {
+      const response = await axios.get('http://localhost:8000/api/events/categories/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       // Ensure we always set an array
@@ -74,7 +74,7 @@ const AdminEvents = () => {
 
   const fetchDepartments = async () => {
     try {
-      const response = await axios.get('http://localhost:8001/api/events/departments/', {
+      const response = await axios.get('http://localhost:8000/api/events/departments/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setDepartments(Array.isArray(response.data) ? response.data : []);
@@ -88,7 +88,7 @@ const AdminEvents = () => {
   const fetchEvents = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8001/api/events/events/', {
+      const response = await axios.get('http://localhost:8000/api/events/events/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       // Handle both array and paginated responses
@@ -135,7 +135,7 @@ const AdminEvents = () => {
       formData.append('file', bulkUploadFile);
 
       const response = await axios.post(
-        'http://localhost:8001/api/events/events/bulk_upload/',
+        'http://localhost:8000/api/events/events/bulk_upload/',
         formData,
         {
           headers: {
@@ -182,7 +182,7 @@ const AdminEvents = () => {
 
       if (editingId) {
         // Update event
-        await axios.put(`http://localhost:8001/api/events/events/${editingId}/`, formDataToSend, {
+        await axios.put(`http://localhost:8000/api/events/events/${editingId}/`, formDataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
@@ -191,7 +191,7 @@ const AdminEvents = () => {
         setSuccessMessage('Event updated successfully!');
       } else {
         // Create event
-        await axios.post('http://localhost:8001/api/events/events/', formDataToSend, {
+        await axios.post('http://localhost:8000/api/events/events/', formDataToSend, {
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data',
@@ -231,7 +231,7 @@ const AdminEvents = () => {
 
   const handleDelete = async () => {
     try {
-      await axios.delete(`http://localhost:8001/api/events/events/${deleteConfirm}/`, {
+      await axios.delete(`http://localhost:8000/api/events/events/${deleteConfirm}/`, {
         headers: { Authorization: `Bearer ${token}` },
       });
       setSuccessMessage('Event deleted successfully!');
@@ -245,7 +245,7 @@ const AdminEvents = () => {
   const handlePublish = async (eventId) => {
     try {
       await axios.post(
-        `http://localhost:8001/api/events/events/${eventId}/publish/`,
+        `http://localhost:8000/api/events/events/${eventId}/publish/`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },
@@ -261,7 +261,7 @@ const AdminEvents = () => {
   const handleCancel = async (eventId) => {
     try {
       await axios.post(
-        `http://localhost:8001/api/events/events/${eventId}/cancel/`,
+        `http://localhost:8000/api/events/events/${eventId}/cancel/`,
         {},
         {
           headers: { Authorization: `Bearer ${token}` },

@@ -39,7 +39,7 @@ const Home = () => {
 
   const fetchEvents = async () => {
     try {
-      const response = await axios.get('http://localhost:8001/api/events/events/');
+      const response = await axios.get('http://localhost:8000/api/events/events/');
       const eventsData = Array.isArray(response.data) ? response.data : response.data.results || [];
       // Debug: Events fetched successfully
       setEvents(eventsData);

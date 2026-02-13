@@ -23,7 +23,7 @@ const MyBookings = () => {
       }
 
       const response = await axios.get(
-        'http://localhost:8001/api/registrations/my_registrations/',
+        'http://localhost:8000/api/registrations/my_registrations/',
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -79,7 +79,7 @@ const MyBookings = () => {
     try {
       const token = localStorage.getItem('access_token');
       await axios.post(
-        'http://localhost:8001/api/registrations/unregister_event/',
+        'http://localhost:8000/api/registrations/unregister_event/',
         { event_id: eventId },
         { headers: { Authorization: `Bearer ${token}` } }
       );

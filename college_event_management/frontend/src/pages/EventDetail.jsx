@@ -20,7 +20,7 @@ const EventDetail = () => {
 
   const fetchEvent = async () => {
     try {
-      const response = await axios.get(`http://localhost:8001/api/events/events/${id}/`);
+      const response = await axios.get(`http://localhost:8000/api/events/events/${id}/`);
       setEvent(response.data);
     } catch (err) {
       setError('Failed to load event details');
@@ -84,7 +84,7 @@ const EventDetail = () => {
     setBooking(true);
     try {
       const response = await axios.post(
-        `http://localhost:8001/api/registrations/`,
+        `http://localhost:8000/api/registrations/`,
         { event: id, quantity },
         { headers: { Authorization: `Bearer ${token}` } }
       );

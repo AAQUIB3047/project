@@ -19,7 +19,7 @@ const Events = () => {
     const fetchEvents = async () => {
       try {
         setLoading(true);
-        const response = await fetch('http://localhost:8001/api/events/events/', {
+        const response = await fetch('http://localhost:8000/api/events/events/', {
           headers: {
             Authorization: `Bearer ${localStorage.getItem('access_token')}`,
           },

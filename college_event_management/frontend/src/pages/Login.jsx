@@ -1,38 +1,59 @@
-import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { GoogleLogin } from '@react-oauth/google';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import axios from 'axios';
-import './Auth.css';
+import { useNavigate } from 'react-router-dom';
+import './Login.css';
 
 const Login = ({ setAuth, setUser }) => {
-  const [email, setEmail] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const [branch, setBranch] = useState('other');
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [googleLoading, setGoogleLoading] = useState(false);
-  const [showBranchPrompt, setShowBranchPrompt] = useState(false);
-  const [googleCredential, setGoogleCredential] = useState(null);
+  const [events, setEvents] = useState([]);
+  const [showLogin, setShowLogin] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
 
-  const BRANCH_OPTIONS = [
-    { value: 'cse', label: 'Computer Science & Engineering' },
-    { value: 'ece', label: 'Electronics & Communication' },
-    { value: 'eee', label: 'Electrical & Electronics' },
-    { value: 'me', label: 'Mechanical Engineering' },
-    { value: 'ce', label: 'Civil Engineering' },
-    { value: 'it', label: 'Information Technology' },
-    { value: 'other', label: 'Other' },
-  ];
+  // Memoize featured events to prevent unnecessary recalculations
+  const featuredEvents = useMemo(() => events.slice(0, 6), [events]);
+
+  // Memoize total slides calculation
+  const totalSlides = useMemo(() => Math.ceil(featuredEvents.length / 3), [featuredEvents.length]);
+
+  // Optimized fetch with loading state
+  const fetchEvents = useCallback(async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/api/events/events/');
+      setEvents(Array.isArray(response.data) ? response.data : []);
+    } catch (err) {
+      console.error('Error fetching events:', err);
+      setEvents([]);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchEvents();
+  }, [fetchEvents]);
+
+  // Optimized carousel timer with cleanup
+  useEffect(() => {
+    if (totalSlides <= 1) return;
+
+    const timer = setInterval(() => {
+      setCurrentSlide((prev) => (prev + 1) % totalSlides);
+    }, 5000);
+
+    return () => clearInterval(timer);
+  }, [totalSlides]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setIsLoading(true);
     setError('');
-    setLoading(true);
 
     try {
-      const response = await axios.post('http://localhost:8001/api/auth/login/', {
-        email,
+      // Backend expects 'email' key, even if it's a username
+      const response = await axios.post('http://localhost:8000/api/auth/login/', {
+        email: username,
         password,
       });
 
@@ -42,209 +63,253 @@ const Login = ({ setAuth, setUser }) => {
       localStorage.setItem('refresh_token', refresh);
       localStorage.setItem('user', JSON.stringify(user));
 
-      setAuth(true);
-      setUser(user);
+      if (setAuth) setAuth(true);
+      if (setUser) setUser(user);
 
-      // Redirect based on user role
       if (user.role === 'organizer') {
         navigate('/dashboard');
       } else {
         navigate('/');
       }
     } catch (err) {
-      setError(
-        err.response?.data?.error || err.response?.data?.detail || 'Login failed. Please try again.'
-      );
+      console.error('Login error:', err);
+      setError(err.response?.data?.error || 'Invalid credentials. Please try again.');
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const handleGoogleSuccess = (credentialResponse) => {
-    setGoogleCredential(credentialResponse);
-    setShowBranchPrompt(true);
-  };
-
-  const handleGoogleError = () => {
-    setError('Google login failed. Please try again.');
-  };
-
-  const submitGoogleLogin = async () => {
-    if (!googleCredential) return;
-
-    setGoogleLoading(true);
-    setError('');
-
-    try {
-      // Decode the JWT to get user info
-      const token = googleCredential.credential;
-      const decodedToken = parseJwt(token);
-
-      const response = await axios.post('http://localhost:8001/api/users/google_login/', {
-        token: token,
-        name: decodedToken.name,
-        email: decodedToken.email,
-        picture: decodedToken.picture,
-        branch: branch,
-      });
-
-      const { access, refresh, user } = response.data;
-
-      localStorage.setItem('access_token', access);
-      localStorage.setItem('refresh_token', refresh);
-      localStorage.setItem('user', JSON.stringify(user));
-
-      setAuth(true);
-      setUser(user);
-      navigate('/');
-    } catch (err) {
-      setError(err.response?.data?.error || 'Google login failed. Please try again.');
-      setShowBranchPrompt(false);
-      setGoogleCredential(null);
-    } finally {
-      setGoogleLoading(false);
+  const handleRegister = (eventId) => {
+    if (!localStorage.getItem('access_token')) {
+      setShowLogin(true);
+    } else {
+      navigate(`/events/${eventId}`);
     }
   };
-
-  const parseJwt = (token) => {
-    try {
-      const base64Url = token.split('.')[1];
-      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
-      const jsonPayload = decodeURIComponent(
-        atob(base64)
-          .split('')
-          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
-          .join('')
-      );
-      return JSON.parse(jsonPayload);
-    } catch (err) {
-      console.error('Error parsing JWT:', err);
-      return {};
-    }
-  };
-
-  if (showBranchPrompt) {
-    return (
-      <div className="auth-container">
-        <div className="auth-card">
-          <div className="auth-header">
-            <h1>Select Your Branch</h1>
-            <p>Complete your profile for attendance tracking</p>
-          </div>
-
-          {error && <div className="alert alert-error">{error}</div>}
-
-          <div className="branch-selector">
-            <label htmlFor="branch">Which branch are you from?</label>
-            <select
-              id="branch"
-              value={branch}
-              onChange={(e) => setBranch(e.target.value)}
-              className="branch-select"
-            >
-              {BRANCH_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          <div className="button-group">
-            <button
-              onClick={submitGoogleLogin}
-              disabled={googleLoading}
-              className="btn btn-primary btn-lg"
-            >
-              {googleLoading ? 'Logging in...' : 'Confirm & Login'}
-            </button>
-            <button
-              onClick={() => {
-                setShowBranchPrompt(false);
-                setGoogleCredential(null);
-                setBranch('other');
-              }}
-              className="btn btn-secondary btn-lg"
-            >
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    );
-  }
 
   return (
-    <div className="auth-container">
-      <div className="auth-card">
-        <div className="auth-header">
-          <h1>Welcome Back</h1>
-          <p>Sign in to your account to continue</p>
-        </div>
-
-        {error && <div className="alert alert-error">{error}</div>}
-
-        <form onSubmit={handleSubmit} className="auth-form">
-          <div className="form-group">
-            <label htmlFor="email">Email Address</label>
-            <input
-              id="email"
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="you@example.com"
-              required
-            />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Password</label>
-            <input
-              id="password"
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="••••••••"
-              required
-            />
-          </div>
-
-          <button type="submit" className="btn btn-primary btn-lg" disabled={loading}>
-            {loading ? 'Signing in...' : 'Sign In'}
-          </button>
-        </form>
-
-        {/* Google login disabled - configure OAuth client ID in .env to enable */}
-        {/* <div className="divider">
-          <span>or</span>
-        </div>
-
-        <div className="google-login-container">
-          <GoogleLogin
-            onSuccess={handleGoogleSuccess}
-            onError={handleGoogleError}
-            theme="outline"
-            size="large"
-            width="100%"
-            text="signin_with"
-          />
-        </div> */}
-
-        <div className="auth-footer">
-          <p>
-            Don't have an account?{' '}
-            <Link to="/register" className="auth-link">
-              Create one
-            </Link>
+    <div className="homepage">
+      {/* Hero Section - BookMyShow Inspired */}
+      <section className="hero">
+        <div className="hero-content">
+          <h1 className="hero-title">🎭 EventHub</h1>
+          <p className="hero-subtitle">
+            Your gateway to amazing college events. Discover, connect, and create unforgettable
+            experiences with your campus community.
           </p>
+          <div className="hero-actions">
+            <button className="btn-primary" onClick={() => navigate('/')}>
+              🎪 Explore Events
+            </button>
+            <button className="btn-secondary" onClick={() => setShowLogin(true)}>
+              🔐 Login to Register
+            </button>
+          </div>
         </div>
-      </div>
+        <div className="hero-visual">
+          <div className="hero-illustration">
+            <div className="floating-element elem-1">🎓</div>
+            <div className="floating-element elem-2">📚</div>
+            <div className="floating-element elem-3">🎨</div>
+            <div className="floating-element elem-4">⚽</div>
+            <div className="floating-element elem-5">🎵</div>
+          </div>
+        </div>
+      </section>
 
-      <div className="auth-visual">
-        <div className="visual-card">🎫</div>
-        <div className="visual-card">🎵</div>
-        <div className="visual-card">🎬</div>
-      </div>
+      {/* Featured Events Carousel - Movie Poster Style */}
+      <section className="featured-events section">
+        <div className="container">
+          <h2 className="section-title">🎬 Featured Events</h2>
+          <p className="section-subtitle">Don't miss out on these trending college events</p>
+
+          {featuredEvents.length > 0 ? (
+            <div className="carousel">
+              <div
+                className="carousel-track"
+                style={{ transform: `translateX(-${currentSlide * 100}%)` }}
+              >
+                {Array.from({ length: Math.ceil(featuredEvents.length / 3) }, (_, slideIndex) => (
+                  <div key={slideIndex} className="carousel-slide">
+                    {featuredEvents.slice(slideIndex * 3, (slideIndex + 1) * 3).map((event) => (
+                      <div key={event.id} className="event-card">
+                        <div className="event-poster">
+                          <div className="poster-overlay">
+                            <span className="event-category">
+                              {event.status === 'approved' ? '🎭 LIVE' : '⏳ COMING SOON'}
+                            </span>
+                          </div>
+                          <div className="poster-content">
+                            <h3 className="event-title">{event.title}</h3>
+                            <div className="event-meta">
+                              <span className="event-date">
+                                📅{' '}
+                                {event.event_date
+                                  ? new Date(event.event_date).toLocaleDateString()
+                                  : 'TBD'}
+                              </span>
+                              <span className="event-location">
+                                📍 {event.venue_details?.venue_name || event.location || 'Campus'}
+                              </span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="event-details">
+                          <p className="event-description">
+                            {event.description?.substring(0, 120)}...
+                          </p>
+                          <div className="event-actions">
+                            <button
+                              className="btn-primary"
+                              onClick={() => handleRegister(event.id)}
+                              disabled={event.status !== 'approved'}
+                            >
+                              {event.status === 'approved' ? '🎫 Book Now' : '⏳ Coming Soon'}
+                            </button>
+                            <button
+                              className="btn-secondary"
+                              onClick={() => navigate(`/events/${event.id}`)}
+                            >
+                              📖 Learn More
+                            </button>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                ))}
+              </div>
+              <div className="carousel-indicators">
+                {Array.from({ length: Math.ceil(featuredEvents.length / 3) }, (_, index) => (
+                  <button
+                    key={index}
+                    className={`indicator ${index === currentSlide ? 'active' : ''}`}
+                    onClick={() => setCurrentSlide(index)}
+                  />
+                ))}
+              </div>
+            </div>
+          ) : (
+            <div className="no-events">
+              <div className="no-events-icon">🎭</div>
+              <h3>No events available right now</h3>
+              <p>Check back soon for exciting new events!</p>
+              <button className="btn-primary" onClick={() => navigate('/')}>
+                Browse All Events
+              </button>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Stats Section - Modern Cards */}
+      <section className="stats-section">
+        <div className="container">
+          <div className="grid grid-4">
+            <div className="stat-card">
+              <div className="stat-icon">📅</div>
+              <div className="stat-number">{events.length}</div>
+              <div className="stat-label">Total Events</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">👥</div>
+              <div className="stat-number">500+</div>
+              <div className="stat-label">Active Students</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">🎭</div>
+              <div className="stat-number">50+</div>
+              <div className="stat-label">Event Organizers</div>
+            </div>
+            <div className="stat-card">
+              <div className="stat-icon">🎫</div>
+              <div className="stat-number">1000+</div>
+              <div className="stat-label">Registrations</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Call to Action Section */}
+      <section className="cta-section section">
+        <div className="container">
+          <div className="cta-content">
+            <h2>Ready to Join the Fun?</h2>
+            <p>Sign up for events and be part of your college's vibrant community</p>
+            <div className="cta-actions">
+              <button className="btn-primary" onClick={() => setShowLogin(true)}>
+                🚀 Get Started
+              </button>
+              <button className="btn-secondary" onClick={() => navigate('/')}>
+                🎪 Browse Events
+              </button>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Login Modal - Modern Design */}
+      {showLogin && (
+        <div className="login-modal">
+          <div className="modal-backdrop" onClick={() => setShowLogin(false)}></div>
+          <div className="modal-content">
+            <div className="modal-header">
+              <h2>🎭 Welcome Back</h2>
+              <p>Sign in to your EventHub account</p>
+            </div>
+            <form onSubmit={handleSubmit}>
+              <div className="form-group">
+                <label>Username or Email</label>
+                <input
+                  type="text"
+                  value={username}
+                  onChange={(e) => setUsername(e.target.value)}
+                  required
+                  placeholder="Enter your username or email"
+                  disabled={isLoading}
+                />
+              </div>
+              <div className="form-group">
+                <label>Password</label>
+                <input
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Enter your password"
+                  disabled={isLoading}
+                />
+              </div>
+              {error && <div className="error-message">{error}</div>}
+              <div className="modal-actions">
+                <button type="submit" className="btn-primary" disabled={isLoading}>
+                  {isLoading ? '🔄 Signing In...' : '🚀 Sign In'}
+                </button>
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => setShowLogin(false)}
+                  disabled={isLoading}
+                >
+                  Cancel
+                </button>
+              </div>
+              <div className="auth-footer" style={{ marginTop: '1rem', textAlign: 'center' }}>
+                <p>
+                  Don't have an account?{' '}
+                  <span
+                    onClick={() => navigate('/register')}
+                    className="auth-link"
+                    style={{ color: 'var(--primary-color)', cursor: 'pointer', fontWeight: 'bold' }}
+                  >
+                    Create one
+                  </span>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

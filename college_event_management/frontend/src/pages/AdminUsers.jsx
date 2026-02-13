@@ -13,7 +13,7 @@ const AdminUsers = () => {
   const fetchUsers = useCallback(async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:8001/api/users/', {
+      const response = await axios.get('http://localhost:8000/api/users/', {
         headers: { Authorization: `Bearer ${token}` },
       });
       setUsers(response.data);
